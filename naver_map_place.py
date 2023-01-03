@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import json
 
 
-def get_naver_map_place(search_keyword):
+def get_search_list(search_keyword):
     driver = webdriver.Chrome()  # Create a new Chrome browser instance
     driver.get(f'https://map.naver.com/v5/api/search?caller=pcweb&query={search_keyword}')  # Navigate to the URL
     driver.implicitly_wait(10)  # Wait for the page to load
@@ -17,7 +17,13 @@ def get_naver_map_place(search_keyword):
     return place_json_data
 
 
+def get_first_place_id(place_json_data):
+    first_place_id = place_json_data['result']['place']['list'][0]['id']
+    return first_place_id
+
+
 if __name__ == '__main__':
     search_keyword = '짜짜루 서울 강남구 역삼동'
-    place_json_data = get_naver_map_place(search_keyword)
-    print(place_json_data)
+    place_json_data = get_search_list(search_keyword)
+    place_id = get_first_place_id(place_json_data)
+    print(place_id)
