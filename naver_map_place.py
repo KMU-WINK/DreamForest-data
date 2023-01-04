@@ -5,7 +5,15 @@ import json
 
 
 def get_search_list(search_keyword):
-    driver = webdriver.Chrome()  # Create a new Chrome browser instance
+    options = webdriver.ChromeOptions()
+
+    options.add_argument('headless')
+    options.add_argument('window-size=1920x1080')
+    options.add_argument("lang=ko_KR")
+    options.add_argument(
+        f'user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36')
+    driver = webdriver.Chrome(chrome_options=options)  # Create a new Chrome browser instance
+
     driver.get(f'https://map.naver.com/v5/api/search?caller=pcweb&query={search_keyword}')  # Navigate to the URL
     driver.implicitly_wait(10)  # Wait for the page to load
     html = driver.page_source  # Get the page source
