@@ -47,6 +47,32 @@ def get_store_info(place_id):
         return data
 
 
+def parsing_store_info(place_info):
+    parsing_place = {}
+
+    get_keys = ["name", "x", "y", "address", "phone", "categories", "bizHour", "menus", "menuImages",
+                "reviewCount"]
+
+    for key in get_keys:
+        value = place_info[key]
+
+        if type(value) == list and len(value) == 0:
+            continue
+        if value is None or value == '' or value == ' ' or value == 'None' or value == '[]':
+            continue
+
+        if key == "menuImages":
+            menu_images = []
+            for menu_image in value:
+                menu_images.append(menu_image["imageUrl"])
+            parsing_place[key] = menu_images
+            continue
+
+        parsing_place[key] = value
+
+    return parsing_place
+
+
 def get_review(place_id, language="ko"):
     with HTMLSession() as s:
         data = [
@@ -189,6 +215,9 @@ if __name__ == '__main__':
     if place_id is not None:
         place_info = get_store_info(place_id)
         print("place_info:", place_info)
+
+        parsing_place = parsing_store_info(place_info)
+        print("parsing_place:", parsing_place)
 
         review_data = get_review(place_id)
         print("review_data:", review_data)

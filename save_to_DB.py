@@ -1,23 +1,12 @@
 import mysql.connector
 import re
 
-from naver_map_place import get_search_list, get_first_place_id, get_store_info
+from naver_map_place import get_search_list, get_first_place_id, get_store_info, parsing_store_info
 import secret_key
 
 
 def remove_parentheses(string):
     return re.sub(r"\([^)]*\)", "", string)
-
-
-def printInfo(place_info, string):
-    value = place_info[string]
-
-    if type(value) == list and len(value) == 0:
-        return -1
-    if value is None or value == '' or value == ' ' or value == 'None' or value == '[]':
-        return -1
-
-    print(f"{string}: {place_info[string]}")
 
 
 # Connect to the database
@@ -62,16 +51,11 @@ for (id, store_name, parcel_address) in cursor:
             print()
             continue
 
-
         else:
-
             place_info = get_store_info(place_id)
 
-            get_keys = ["name", "x", "y", "address", "phone", "categories", "bizHour", "menus", "menuImages",
-                        "reviewCount"]
-
-            for key in get_keys:
-                printInfo(place_info, key)
+            parsing_place = parsing_store_info(place_info)
+            print("parsing_place:", parsing_place)
 
             print("\n")
             is_crawling_success = True
