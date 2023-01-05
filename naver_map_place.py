@@ -3,6 +3,7 @@ from requests_html import HTMLSession
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import json
+from datetime import datetime
 
 
 def get_search_list(search_keyword):  # TODO: selenium 대신 requests_html 사용하기
@@ -170,7 +171,7 @@ def parsing_review(json_reviews):
                 review_image_list.append(review_image_data[media_index]["thumbnail"])
                 review_data["review_image"] = review_image_list
 
-            review_data["visit_date"] = item["visited"]  # TODO: date 형식으로 변환
+            review_data["visit_date"] = datetime.strptime(item["visited"][0:-2], "%y.%m.%d")
             review_data["visit_type"] = item["originType"]
             review_data["visit_count"] = item["visitCount"]
 
