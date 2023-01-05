@@ -27,7 +27,10 @@ def get_search_list(search_keyword):
 
 
 def get_first_place_id(place_json_data):
-    first_place_id = place_json_data['result']['place']['list'][0]['id']
+    place_result = place_json_data['result']['place']
+    if place_result is None:
+        return None
+    first_place_id = place_result['list'][0]['id']
     return first_place_id
 
 
@@ -41,9 +44,10 @@ def get_store_info(place_id):
 
 
 if __name__ == '__main__':
-    search_keyword = '짜짜루 서울 강남구 역삼동'
+    search_keyword = '서울 강남구 역삼동 짜짜루'
     place_json_data = get_search_list(search_keyword)
     place_id = get_first_place_id(place_json_data)
-    print(place_id)
-    place_info = get_store_info(place_id)
-    print(place_info)
+    print("place_id:", place_id)
+    if place_id is not None:
+        place_info = get_store_info(place_id)
+        print("place_info:", place_info)

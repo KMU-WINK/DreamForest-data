@@ -39,18 +39,34 @@ for (id, store_name, parcel_address) in cursor:
     dong_match = re.search(r"^(서울 [^\s]+구 [^\s]+동)", parcel_address)
 
     if dong_match is None:
+        crawling_error_count += 1
         continue
 
     dong_address = dong_match.group(1)
 
-    # search_keyword = '짜짜루 서울 강남구 역삼동'
+    # search_keyword = '서울 강남구 역삼동 짜짜루'
     search_keyword = f"{dong_address} {remove_parentheses(store_name)}"
     print("search_keyword:", search_keyword)
 
-    try:
+    place_json_data = get_search_list(search_keyword)
+    place_id = get_first_place_id(place_json_data)
+    print("place_id:", place_id)
+
+    if place_id is None:
+        print("네이버 지도에서 장소를 찾지 못해 다른 키워드로 재검색합니다.")
+        # search_keyword = '짜짜루 서울 강남구 역삼동'
+        search_keyword = f"{remove_parentheses(store_name)} {dong_address}"
+        print("search_keyword:", search_keyword)
+
         place_json_data = get_search_list(search_keyword)
         place_id = get_first_place_id(place_json_data)
         print("place_id:", place_id)
+
+    if place_id is None:
+        crawling_error_count += 1
+
+    else:
+
         place_info = get_store_info(place_id)
 
         printInfo(place_info, "name")
@@ -63,15 +79,20 @@ for (id, store_name, parcel_address) in cursor:
         printInfo(place_info, "menus")
         printInfo(place_info, "menuImages")
         printInfo(place_info, "reviewCount")
+
         crawling_success_count += 1
 
-
-    except:
-        print("crawling error")
-        crawling_error_count += 1
-        pass
+    # except:
+    #     print("crawling error")
+    #     crawling_error_count += 1
+    #     pass
 
     print("\n")
+
+# crawling result report
+crawling_number = crawling_success_count + crawling_error_count
+print(
+    f"crawling success rate: {round(crawling_success_count / crawling_number)}% ({crawling_success_count}/{crawling_number})")
 
 cursor.close()  # Close the cursor
 cnx.close()  # Close the connection
