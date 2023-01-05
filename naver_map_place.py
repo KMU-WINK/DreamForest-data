@@ -1,33 +1,23 @@
 import requests
 from requests_html import HTMLSession
-from selenium import webdriver
-from bs4 import BeautifulSoup
+
 import json
 from datetime import datetime
 
 
-def get_search_list(search_keyword):  # TODO: selenium 대신 requests_html 사용하기
-    options = webdriver.ChromeOptions()
+def get_search_list(search_keyword, language="ko"):
+    with HTMLSession() as s:
+        headers = {
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br",
+            "accept-language": f"{language}",
+            "Content-Type": "application/json",
+        }
 
-    options.add_argument('headless')
-    options.add_argument('window-size=1920x1080')
-    options.add_argument("lang=ko_KR")
-    options.add_argument(
-        f'user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36')
-    options.add_argument('--no-sandbox')
+        result = s.get(f'https://map.naver.com/v5/api/search?caller=pcweb&query={search_keyword}',
+                       headers=headers).text
 
-    driver = webdriver.Chrome(chrome_options=options)  # Create a new Chrome browser instance
-
-    driver.get(f'https://map.naver.com/v5/api/search?caller=pcweb&query={search_keyword}')  # Navigate to the URL
-    driver.implicitly_wait(10)  # Wait for the page to load
-    html = driver.page_source  # Get the page source
-
-    soup = BeautifulSoup(html, 'html.parser')
-    pre_element = soup.select_one('body > pre')
-    place_json_data = json.loads(pre_element.text)
-
-    driver.close()  # Close the browser
-    return place_json_data
+        return json.loads(result)
 
 
 def get_first_place_id(place_json_data):
@@ -207,9 +197,10 @@ def parsing_review(json_reviews):
 
 if __name__ == '__main__':
     search_keyword = '서울 강남구 역삼동 짜짜루'
-    place_json_data = get_search_list(search_keyword)
+    place_search_data = get_search_list(search_keyword)
+    print("place_search_data:", place_search_data)
 
-    place_id = get_first_place_id(place_json_data)
+    place_id = get_first_place_id(place_search_data)
     print("place_id:", place_id)
 
     if place_id is not None:
