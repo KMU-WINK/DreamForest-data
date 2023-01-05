@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 import json
 
 
-def get_search_list(search_keyword):
+def get_search_list(search_keyword):  # TODO: selenium 대신 requests_html 사용하기
     options = webdriver.ChromeOptions()
 
     options.add_argument('headless')
@@ -129,8 +129,14 @@ def parsing_review(json_reviews):
     all_reviews = []
     review_id_set = set()
 
+    review_stats = {}
+
     for review in json_reviews:
         _data = review["data"]
+
+        if "visitorReviewStats" in _data:
+            review_stats["average_rating"] = _data["visitorReviewStats"]["review"]["avgRating"]
+            review_stats["visit_review_count"] = _data["visitorReviewStats"]["review"]["totalCount"]
 
         if "visitorReviews" not in _data.keys():
             continue
@@ -164,12 +170,12 @@ def parsing_review(json_reviews):
                 review_image_list.append(review_image_data[media_index]["thumbnail"])
                 review_data["review_image"] = review_image_list
 
-            review_data["visit_date"] = item["visited"]
+            review_data["visit_date"] = item["visited"]  # TODO: date 형식으로 변환
             review_data["visit_type"] = item["originType"]
             review_data["visit_count"] = item["visitCount"]
 
             all_reviews.append(review_data)
-    return all_reviews
+    return review_stats, all_reviews
 
 
 if __name__ == '__main__':
@@ -186,5 +192,6 @@ if __name__ == '__main__':
         review_data = get_review(place_id)
         print("review_data:", review_data)
 
-        parsing_reviews = parsing_review(review_data)
+        review_stats, parsing_reviews = parsing_review(review_data)
+        print("review_stats:", review_stats)
         print("parsing_reviews:", parsing_reviews)
