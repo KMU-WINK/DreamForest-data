@@ -3,9 +3,10 @@ from requests_html import HTMLSession
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import json
+from datetime import datetime
 
 
-def get_search_list(search_keyword):
+def get_search_list(search_keyword):  # TODO: selenium 대신 requests_html 사용하기
     options = webdriver.ChromeOptions()
 
     options.add_argument('headless')
@@ -125,6 +126,59 @@ def get_review(place_id, language="ko"):
         return json_result
 
 
+def parsing_review(json_reviews):
+    all_reviews = []
+    review_id_set = set()
+
+    review_stats = {}
+
+    for review in json_reviews:
+        _data = review["data"]
+
+        if "visitorReviewStats" in _data:
+            review_stats["average_rating"] = _data["visitorReviewStats"]["review"]["avgRating"]
+            review_stats["visit_review_count"] = _data["visitorReviewStats"]["review"]["totalCount"]
+
+        if "visitorReviews" not in _data.keys():
+            continue
+
+        items = _data["visitorReviews"]["items"]
+
+        for item in items:
+            review_data = {}
+            review_id = item["id"]
+
+            if review_id in review_id_set:
+                continue
+
+            review_id_set.add(review_id)
+            review_data["review_id"] = review_id
+            review_data["rating"] = item["rating"]
+            user_data = item["author"]
+
+            review_data["user_id"] = user_data["id"]
+            review_data["user_nickname"] = user_data["nickname"]
+            review_data["user_from"] = user_data["from"]
+            review_data["user_image_url"] = user_data["imageUrl"]
+            review_data["user_object_id"] = user_data["objectId"]
+            review_data["user_url"] = user_data["url"]
+
+            review_data["review_body"] = item["body"]
+            review_image_data = item["media"]
+
+            review_image_list = []
+            for media_index in range(len(review_image_data)):
+                review_image_list.append(review_image_data[media_index]["thumbnail"])
+                review_data["review_image"] = review_image_list
+
+            review_data["visit_date"] = datetime.strptime(item["visited"][0:-2], "%y.%m.%d")
+            review_data["visit_type"] = item["originType"]
+            review_data["visit_count"] = item["visitCount"]
+
+            all_reviews.append(review_data)
+    return review_stats, all_reviews
+
+
 if __name__ == '__main__':
     search_keyword = '서울 강남구 역삼동 짜짜루'
     place_json_data = get_search_list(search_keyword)
@@ -138,3 +192,7 @@ if __name__ == '__main__':
 
         review_data = get_review(place_id)
         print("review_data:", review_data)
+
+        review_stats, parsing_reviews = parsing_review(review_data)
+        print("review_stats:", review_stats)
+        print("parsing_reviews:", parsing_reviews)
