@@ -42,8 +42,8 @@ for (id, store_name, parcel_address) in cursor:
 
         print("search_keyword:", search_keyword)
 
-        place_json_data = get_search_list(search_keyword)
-        place_id = get_first_place_id(place_json_data)
+        place_search_data = get_search_list(search_keyword)
+        place_id = get_first_place_id(place_search_data)
         print("place_id:", place_id)
 
         if place_id is None:
