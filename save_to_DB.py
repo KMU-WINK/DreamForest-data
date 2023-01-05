@@ -1,5 +1,6 @@
 import mysql.connector
 import re
+import time
 
 from naver_map_place import get_search_list, get_first_place_id, get_store_info, parsing_store_info
 import secret_key
@@ -8,6 +9,8 @@ import secret_key
 def remove_parentheses(string):
     return re.sub(r"\([^)]*\)", "", string)
 
+
+SLEEP_TIME = 1
 
 # Connect to the database
 cnx = mysql.connector.connect(user=secret_key.db_user, password=secret_key.db_password,
@@ -43,6 +46,7 @@ for (id, store_name, parcel_address) in cursor:
         print("search_keyword:", search_keyword)
 
         place_search_data = get_search_list(search_keyword)
+        time.sleep(SLEEP_TIME)
         place_id = get_first_place_id(place_search_data)
         print("place_id:", place_id)
 
@@ -56,6 +60,7 @@ for (id, store_name, parcel_address) in cursor:
 
             parsing_place = parsing_store_info(place_info)
             print("parsing_place:", parsing_place)
+            time.sleep(SLEEP_TIME)
 
             print("\n")
             is_crawling_success = True
