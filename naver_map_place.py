@@ -125,6 +125,53 @@ def get_review(place_id, language="ko"):
         return json_result
 
 
+def parsing_review(json_reviews):
+    all_reviews = []
+    review_id_set = set()
+
+    for review in json_reviews:
+        _data = review["data"]
+
+        if "visitorReviews" not in _data.keys():
+            continue
+
+        items = _data["visitorReviews"]["items"]
+
+        for item in items:
+            review_data = {}
+            review_id = item["id"]
+
+            if review_id in review_id_set:
+                continue
+
+            review_id_set.add(review_id)
+            review_data["review_id"] = review_id
+            review_data["rating"] = item["rating"]
+            user_data = item["author"]
+
+            review_data["user_id"] = user_data["id"]
+            review_data["user_nickname"] = user_data["nickname"]
+            review_data["user_from"] = user_data["from"]
+            review_data["user_image_url"] = user_data["imageUrl"]
+            review_data["user_object_id"] = user_data["objectId"]
+            review_data["user_url"] = user_data["url"]
+
+            review_data["review_body"] = item["body"]
+            review_image_data = item["media"]
+
+            review_image_list = []
+            for media_index in range(len(review_image_data)):
+                review_image_list.append(review_image_data[media_index]["thumbnail"])
+                review_data["review_image"] = review_image_list
+
+            review_data["visit_date"] = item["visited"]
+            review_data["visit_type"] = item["originType"]
+            review_data["visit_count"] = item["visitCount"]
+
+            all_reviews.append(review_data)
+    return all_reviews
+
+
 if __name__ == '__main__':
     search_keyword = '서울 강남구 역삼동 짜짜루'
     place_json_data = get_search_list(search_keyword)
@@ -138,3 +185,6 @@ if __name__ == '__main__':
 
         review_data = get_review(place_id)
         print("review_data:", review_data)
+
+        parsing_reviews = parsing_review(review_data)
+        print("parsing_reviews:", parsing_reviews)
