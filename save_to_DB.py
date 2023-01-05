@@ -44,52 +44,43 @@ for (id, store_name, parcel_address) in cursor:
 
     dong_address = dong_match.group(1)
 
-    # search_keyword = '서울 강남구 역삼동 짜짜루'
-    search_keyword = f"{dong_address} {remove_parentheses(store_name)}"
-    print("search_keyword:", search_keyword)
+    search_keywords = [f"{dong_address} {remove_parentheses(store_name)}",
+                       f"{remove_parentheses(store_name)} {dong_address}"]
 
-    place_json_data = get_search_list(search_keyword)
-    place_id = get_first_place_id(place_json_data)
-    print("place_id:", place_id)
+    is_crawling_success = False
 
-    if place_id is None:
-        print("네이버 지도에서 장소를 찾지 못해 다른 키워드로 재검색합니다.")
-        # search_keyword = '짜짜루 서울 강남구 역삼동'
-        search_keyword = f"{remove_parentheses(store_name)} {dong_address}"
+    for search_keyword in search_keywords:
+
         print("search_keyword:", search_keyword)
 
         place_json_data = get_search_list(search_keyword)
         place_id = get_first_place_id(place_json_data)
         print("place_id:", place_id)
 
-    if place_id is None:
+        if place_id is None:
+            print("네이버 지도에서 장소를 찾지 못해 다른 키워드로 재검색합니다.")
+            print()
+            continue
+
+
+        else:
+
+            place_info = get_store_info(place_id)
+
+            get_keys = ["name", "x", "y", "address", "phone", "categories", "bizHour", "menus", "menuImages",
+                        "reviewCount"]
+
+            for key in get_keys:
+                printInfo(place_info, key)
+
+            print("\n")
+            is_crawling_success = True
+            crawling_success_count += 1
+            break
+
+    if not is_crawling_success:
         crawling_error_count += 1
 
-    else:
-
-        place_info = get_store_info(place_id)
-
-        printInfo(place_info, "name")
-        printInfo(place_info, "x")
-        printInfo(place_info, "y")
-        printInfo(place_info, "address")
-        printInfo(place_info, "phone")
-        printInfo(place_info, "categories")
-        printInfo(place_info, "bizHour")
-        printInfo(place_info, "menus")
-        printInfo(place_info, "menuImages")
-        printInfo(place_info, "reviewCount")
-
-        crawling_success_count += 1
-
-    # except:
-    #     print("crawling error")
-    #     crawling_error_count += 1
-    #     pass
-
-    print("\n")
-
-# crawling result report
 crawling_number = crawling_success_count + crawling_error_count
 print(
     f"crawling success rate: {round(crawling_success_count / crawling_number)}% ({crawling_success_count}/{crawling_number})")
