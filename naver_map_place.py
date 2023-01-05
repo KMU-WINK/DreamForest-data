@@ -1,10 +1,22 @@
+import requests
+from requests_html import HTMLSession
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import json
 
 
-def get_naver_map_place(search_keyword):
-    driver = webdriver.Chrome()  # Create a new Chrome browser instance
+def get_search_list(search_keyword):
+    options = webdriver.ChromeOptions()
+
+    options.add_argument('headless')
+    options.add_argument('window-size=1920x1080')
+    options.add_argument("lang=ko_KR")
+    options.add_argument(
+        f'user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36')
+    options.add_argument('--no-sandbox')
+
+    driver = webdriver.Chrome(chrome_options=options)  # Create a new Chrome browser instance
+
     driver.get(f'https://map.naver.com/v5/api/search?caller=pcweb&query={search_keyword}')  # Navigate to the URL
     driver.implicitly_wait(10)  # Wait for the page to load
     html = driver.page_source  # Get the page source
@@ -17,7 +29,112 @@ def get_naver_map_place(search_keyword):
     return place_json_data
 
 
+def get_first_place_id(place_json_data):
+    place_result = place_json_data['result']['place']
+    if place_result is None:
+        return None
+    first_place_id = place_result['list'][0]['id']
+    return first_place_id
+
+
+def get_store_info(place_id):
+    response = requests.get(f"https://map.naver.com/v5/api/sites/summary/{place_id}")
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        data = response.json()
+        return data
+
+
+def get_review(place_id, language="ko"):
+    with HTMLSession() as s:
+        data = [
+            {
+                "operationName": "getVisitorReviews",
+                "variables": {
+                    "input": {
+                        "businessId": f"{place_id}",
+                        "bookingBusinessId": None,
+                        "businessType": "restaurant",
+                        "size": 3,
+                        "page": 1,
+                        "includeContent": True,
+                        "cidList": [
+                            "220036",
+                            "220037",
+                            "220053",
+                            "1004760",
+                            "1004452"
+                        ]
+                    }
+                },
+                "query": "query getVisitorReviews($input: VisitorReviewsInput) {\n  visitorReviews(input: $input) {\n    items {\n      id\n      rating\n      author {\n        id\n        nickname\n        from\n        imageUrl\n        objectId\n        url\n        review {\n          totalCount\n          imageCount\n          avgRating\n          __typename\n        }\n        theme {\n          totalCount\n          __typename\n        }\n        __typename\n      }\n      body\n      thumbnail\n      media {\n        type\n        thumbnail\n        __typename\n      }\n      tags\n      status\n      visitCount\n      viewCount\n      visited\n      created\n      reply {\n        editUrl\n        body\n        editedBy\n        created\n        replyTitle\n        isReported\n        isSuspended\n        __typename\n      }\n      originType\n      item {\n        name\n        code\n        options\n        __typename\n      }\n      isFollowing\n      language\n      highlightOffsets\n      translatedText\n      businessName\n      receiptInfoUrl\n      __typename\n    }\n    starDistribution {\n      score\n      count\n      __typename\n    }\n    hideProductSelectBox\n    total\n    __typename\n  }\n}\n"
+            },
+            {
+                "operationName": "getVisitorReviewStats",
+                "variables": {
+                    "businessType": "restaurant",
+                    "id": f"{place_id}",
+                    "itemId": "0"
+                },
+                "query": "query getVisitorReviewStats($id: String, $itemId: String, $businessType: String = \"place\") {\n  visitorReviewStats(input: {businessId: $id, itemId: $itemId, businessType: $businessType}) {\n    id\n    name\n    apolloCacheId\n    review {\n      avgRating\n      totalCount\n      scores {\n        count\n        score\n        __typename\n      }\n      starDistribution {\n        count\n        score\n        __typename\n      }\n      imageReviewCount\n      authorCount\n      maxSingleReviewScoreCount\n      maxScoreWithMaxCount\n      __typename\n    }\n    analysis {\n      themes {\n        code\n        label\n        count\n        __typename\n      }\n      menus {\n        label\n        count\n        __typename\n      }\n      votedKeyword {\n        totalCount\n        reviewCount\n        userCount\n        details {\n          category\n          code\n          iconUrl\n          iconCode\n          displayName\n          count\n          previousRank\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    visitorReviewsTotal\n    ratingReviewsTotal\n    __typename\n  }\n}\n"
+            },
+            {
+                "operationName": "getVisitorReviewStats",
+                "variables": {
+                    "businessType": "restaurant",
+                    "id": f"{place_id}",
+                },
+                "query": "query getVisitorReviewStats($id: String, $itemId: String, $businessType: String = \"place\") {\n  visitorReviewStats(input: {businessId: $id, itemId: $itemId, businessType: $businessType}) {\n    id\n    name\n    apolloCacheId\n    review {\n      avgRating\n      totalCount\n      scores {\n        count\n        score\n        __typename\n      }\n      starDistribution {\n        count\n        score\n        __typename\n      }\n      imageReviewCount\n      authorCount\n      maxSingleReviewScoreCount\n      maxScoreWithMaxCount\n      __typename\n    }\n    analysis {\n      themes {\n        code\n        label\n        count\n        __typename\n      }\n      menus {\n        label\n        count\n        __typename\n      }\n      votedKeyword {\n        totalCount\n        reviewCount\n        userCount\n        details {\n          category\n          code\n          iconUrl\n          iconCode\n          displayName\n          count\n          previousRank\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    visitorReviewsTotal\n    ratingReviewsTotal\n    __typename\n  }\n}\n"
+            },
+            {
+                "operationName": "getUgcReviewList",
+                "variables": {
+                    "businessId": f"{place_id}",
+                },
+                "query": "query getUgcReviewList($businessId: String) {\n  restaurant(id: $businessId, isNx: false, deviceType: \"mobile\") {\n    fsasReviews {\n      ...FsasReviews\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment FsasReviews on FsasReviewsResult {\n  total\n  maxItemCount\n  items {\n    name\n    type\n    typeName\n    url\n    home\n    id\n    title\n    rank\n    contents\n    bySmartEditor3\n    hasNaverReservation\n    thumbnailUrl\n    thumbnailUrlList\n    thumbnailCount\n    date\n    isOfficial\n    isRepresentative\n    profileImageUrl\n    isVideoThumbnail\n    reviewId\n    authorName\n    createdString\n    __typename\n  }\n  __typename\n}\n"
+            },
+            {
+                "operationName": "getVisitorReviewPhotosInVisitorReviewTab",
+                "variables": {
+                    "businessId": f"{place_id}",
+                    "businessType": "restaurant",
+                    "page": 1,
+                    "display": 20
+                },
+                "query": "query getVisitorReviewPhotosInVisitorReviewTab($businessId: String!, $businessType: String, $page: Int, $display: Int, $theme: String, $item: String) {\n  visitorReviews(input: {businessId: $businessId, businessType: $businessType, page: $page, display: $display, theme: $theme, item: $item, isPhotoUsed: true}) {\n    items {\n      id\n      rating\n      author {\n        id\n        nickname\n        from\n        imageUrl\n        objectId\n        url\n        __typename\n      }\n      body\n      thumbnail\n      media {\n        type\n        thumbnail\n        __typename\n      }\n      tags\n      status\n      visited\n      originType\n      item {\n        name\n        code\n        options\n        __typename\n      }\n      businessName\n      isFollowing\n      visitCount\n      votedKeywords {\n        code\n        iconUrl\n        iconCode\n        displayName\n        __typename\n      }\n      __typename\n    }\n    starDistribution {\n      score\n      count\n      __typename\n    }\n    hideProductSelectBox\n    total\n    __typename\n  }\n}\n"
+            },
+            {
+                "operationName": "useBusiness",
+                "variables": {
+                    "id": f"{place_id}",
+                    "isNx": False
+                },
+                "query": "query useBusiness($id: String, $isNx: Boolean) {\n  restaurant(id: $id, isNx: $isNx, deviceType: \"mobile\") {\n    kinQna {\n      answerCount\n      answerList {\n        detailUrl\n        writeTime\n        contents\n        questionTitle\n        thumbnailUrl\n        dirId\n        __typename\n      }\n      profileUrl\n      __typename\n    }\n    __typename\n  }\n}\n"
+            }
+        ]
+        headers = {
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br",
+            "accept-language": f"{language}",
+            "Content-Type": "application/json",
+            "referer": f"https://pcmap.place.naver.com/restaurant/{place_id}/home"
+        }
+        result = s.post('https://pcmap-api.place.naver.com/graphql', headers=headers, data=json.dumps(data)).text
+        json_result = json.loads(result)
+        return json_result
+
+
 if __name__ == '__main__':
-    search_keyword = '짜짜루 서울 강남구 역삼동'
-    place_json_data = get_naver_map_place(search_keyword)
-    print(place_json_data)
+    search_keyword = '서울 강남구 역삼동 짜짜루'
+    place_json_data = get_search_list(search_keyword)
+
+    place_id = get_first_place_id(place_json_data)
+    print("place_id:", place_id)
+
+    if place_id is not None:
+        place_info = get_store_info(place_id)
+        print("place_info:", place_info)
+
+        review_data = get_review(place_id)
+        print("review_data:", review_data)
