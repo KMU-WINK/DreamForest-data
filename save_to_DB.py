@@ -2,7 +2,8 @@ import mysql.connector
 import re
 import time
 
-from naver_map_place import get_search_list, get_first_place_id, get_store_info, parsing_store_info
+from naver_map_place import get_search_list, get_first_place_id, get_store_info, parsing_store_info, get_review, \
+    parsing_review
 import secret_key
 
 
@@ -57,10 +58,22 @@ for (id, store_name, parcel_address) in cursor:
 
         else:
             place_info = get_store_info(place_id)
+            time.sleep(SLEEP_TIME)
+            # print("place_info:", place_info)
 
             parsing_place = parsing_store_info(place_info)
-            print("parsing_place:", parsing_place)
             time.sleep(SLEEP_TIME)
+            print("parsing_place:", parsing_place)
+
+            review_data = get_review(place_id)
+            time.sleep(SLEEP_TIME)
+            print("review_data:", review_data)
+
+            review_stats, parsing_reviews = parsing_review(review_data)
+            time.sleep(SLEEP_TIME)
+            print("review_stats:", review_stats)
+            print("parsing_reviews:", parsing_reviews)
+
 
             print("\n")
             is_crawling_success = True

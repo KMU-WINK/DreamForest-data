@@ -1,5 +1,6 @@
 import requests
 from requests_html import HTMLSession
+import pytz
 
 import json
 from datetime import datetime
@@ -149,16 +150,18 @@ def parsing_review(json_reviews):
     review_stats = {}
 
     for review in json_reviews:
-        _data = review["data"]
+        data_obj = review["data"]
 
-        if "visitorReviewStats" in _data:
-            review_stats["average_rating"] = _data["visitorReviewStats"]["review"]["avgRating"]
-            review_stats["visit_review_count"] = _data["visitorReviewStats"]["review"]["totalCount"]
+        if "visitorReviewStats" in data_obj:
+            if data_obj["visitorReviewStats"] is not None:
+                review_obj = data_obj["visitorReviewStats"]["review"]
+                review_stats["average_rating"] = review_obj["avgRating"]
+                review_stats["visit_review_count"] = review_obj["totalCount"]
 
-        if "visitorReviews" not in _data.keys():
+        if "visitorReviews" not in data_obj.keys():
             continue
 
-        items = _data["visitorReviews"]["items"]
+        items = data_obj["visitorReviews"]["items"]
 
         for item in items:
             review_data = {}
@@ -187,7 +190,18 @@ def parsing_review(json_reviews):
                 review_image_list.append(review_image_data[media_index]["thumbnail"])
                 review_data["review_image"] = review_image_list
 
-            review_data["visit_date"] = datetime.strptime(item["visited"][0:-2], "%y.%m.%d")
+            visited_date = item["visited"][0:-2]
+
+            try:
+                review_data["visit_date"] = datetime.strptime(visited_date, "%y.%m.%d")
+            except ValueError:
+
+                kst = pytz.timezone('Asia/Seoul')  # Create a timezone object for KST
+                korea_current_datetime = datetime.now(tz=kst)  # Get the current date and time in KST
+                korea_current_year = korea_current_datetime.year  # Get the current year
+
+                review_data["visit_date"] = datetime.strptime(visited_date, "%m.%d").replace(year=korea_current_year)
+
             review_data["visit_type"] = item["originType"]
             review_data["visit_count"] = item["visitCount"]
 
