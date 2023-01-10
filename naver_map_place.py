@@ -29,13 +29,22 @@ def get_first_place_id(place_json_data):
     return first_place_id
 
 
-def get_store_info(place_id):
-    response = requests.get(f"https://map.naver.com/v5/api/sites/summary/{place_id}")
+def get_store_info(place_id, language="ko"):
+    with HTMLSession() as s:
+        headers = {
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br",
+            "accept-language": f"{language}",
+            "Content-Type": "application/json",
+        }
 
-    # Check if the request was successful
-    if response.status_code == 200:
-        data = response.json()
-        return data
+        result = s.get(f"https://map.naver.com/v5/api/sites/summary/{place_id}",
+                       headers=headers)
+
+        if result.status_code == 200:
+            return json.loads(result.text)
+        else:
+            raise Exception(f"Error: {result.status_code}")
 
 
 def parsing_store_info(place_info):
