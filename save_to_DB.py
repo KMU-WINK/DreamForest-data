@@ -81,19 +81,23 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     print("\n")
 
                     # Make stores.csv (start)
-                    parsing_place.update(review_stats)
-                    stores_writer = csv.DictWriter(stores_csv_file, fieldnames=parsing_place.keys())
+                    stores_dict = {"id": id}
+                    stores_dict.update(parsing_place)
+                    stores_dict.update(review_stats)
+                    stores_writer = csv.DictWriter(stores_csv_file, fieldnames=stores_dict.keys())
                     if reviews_csv_file.tell() == 0:
                         stores_writer.writeheader()
-                    stores_writer.writerow(parsing_place)
+                    stores_writer.writerow(stores_dict)
                     # Make stores.csv (end)
 
                     # Make reviews.csv (start)
+                    reviews_dict = {"stores_id": id}
                     for review in parsing_reviews:
-                        reviews_writer = csv.DictWriter(reviews_csv_file, fieldnames=review.keys())
+                        reviews_dict.update(review)
+                        reviews_writer = csv.DictWriter(reviews_csv_file, fieldnames=reviews_dict.keys())
                         if reviews_csv_file.tell() == 0:
                             reviews_writer.writeheader()
-                        reviews_writer.writerow(review)
+                        reviews_writer.writerow(reviews_dict)
                     # Make reviews.csv (end)
 
                     is_crawling_success = True
