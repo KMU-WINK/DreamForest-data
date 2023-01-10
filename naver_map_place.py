@@ -44,6 +44,10 @@ def parsing_store_info(place_info):
     get_keys = ["name", "x", "y", "address", "phone", "categories", "bizHour", "menus", "menuImages",
                 "reviewCount"]
 
+    # Initialize the parsing_place dictionary with the keys
+    for key in get_keys:
+        parsing_place[key] = None
+
     for key in get_keys:
         value = place_info[key]
 
@@ -185,7 +189,7 @@ def parsing_review(json_reviews):
             review_data["review_body"] = item["body"]
             review_image_data = item["media"]
 
-            review_data["review_image"] = []
+            review_data["review_image"] = None
             review_image_list = []
             for media_index in range(len(review_image_data)):
                 review_image_list.append(review_image_data[media_index]["thumbnail"])
