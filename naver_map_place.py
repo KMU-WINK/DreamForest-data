@@ -185,6 +185,7 @@ def parsing_review(json_reviews):
             review_data["review_body"] = item["body"]
             review_image_data = item["media"]
 
+            review_data["review_image"] = []
             review_image_list = []
             for media_index in range(len(review_image_data)):
                 review_image_list.append(review_image_data[media_index]["thumbnail"])
