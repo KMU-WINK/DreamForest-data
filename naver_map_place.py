@@ -60,8 +60,11 @@ def parsing_store_info(place_info):
             menu_images = []
             for menu_image in value:
                 menu_images.append(menu_image["imageUrl"])
-            parsing_place[key] = menu_images
+            parsing_place[key] = json.dumps(menu_images)
             continue
+
+        if type(value) == list or type(value) == dict:
+            value = json.dumps(value)
 
         parsing_place[key] = value
 
@@ -193,7 +196,7 @@ def parsing_review(json_reviews):
             review_image_list = []
             for media_index in range(len(review_image_data)):
                 review_image_list.append(review_image_data[media_index]["thumbnail"])
-                review_data["review_image"] = review_image_list
+                review_data["review_image"] = json.dumps(review_image_list)
 
             visited_date = item["visited"][0:-2]
 
