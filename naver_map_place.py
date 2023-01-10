@@ -15,10 +15,14 @@ def get_search_list(search_keyword, language="ko"):
             "Content-Type": "application/json",
         }
 
-        result = s.get(f'https://map.naver.com/v5/api/search?caller=pcweb&query={search_keyword}',
-                       headers=headers).text
+        url = f"https://map.naver.com/v5/api/search?caller=pcweb&query={search_keyword}"
+        print("url:", url)
 
-        return json.loads(result)
+        result = s.get(url, headers=headers)
+        if result.status_code == 200:
+            return json.loads(result.text)
+        else:
+            raise Exception(f"Error: {result.status_code}")
 
 
 def get_first_place_id(place_json_data):
@@ -29,13 +33,22 @@ def get_first_place_id(place_json_data):
     return first_place_id
 
 
-def get_store_info(place_id):
-    response = requests.get(f"https://map.naver.com/v5/api/sites/summary/{place_id}")
+def get_store_info(place_id, language="ko"):
+    with HTMLSession() as s:
+        headers = {
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br",
+            "accept-language": f"{language}",
+            "Content-Type": "application/json",
+        }
 
-    # Check if the request was successful
-    if response.status_code == 200:
-        data = response.json()
-        return data
+        result = s.get(f"https://map.naver.com/v5/api/sites/summary/{place_id}",
+                       headers=headers)
+
+        if result.status_code == 200:
+            return json.loads(result.text)
+        else:
+            raise Exception(f"Error: {result.status_code}")
 
 
 def parsing_store_info(place_info):
@@ -48,7 +61,6 @@ def parsing_store_info(place_info):
                       "naver_categories",
                       "naver_biz_hour", "naver_menus", "naver_menu_images",
                       "naver_blog_review_count"]
-
     # Initialize the parsing_place dictionary with the keys
     for my_key in my_column_keys:
         parsing_place[my_key] = None
@@ -229,6 +241,8 @@ def parsing_review(json_reviews):
 if __name__ == '__main__':
     search_keyword = '서울 강남구 역삼동 짜짜루'
     # search_keyword = '서울 강남구 논현동 씨유 논현역드림점'
+    # search_keyword = '서울 강남구 역삼동 스무디킹 강남역점'
+
     place_search_data = get_search_list(search_keyword)
     print("place_search_data:", place_search_data)
 
