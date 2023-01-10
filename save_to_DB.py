@@ -1,3 +1,5 @@
+import csv
+
 import mysql.connector
 import re
 import time
@@ -13,75 +15,93 @@ def remove_parentheses(string):
 
 SLEEP_TIME = 1
 
-# Connect to the database
-cnx = mysql.connector.connect(user=secret_key.db_user, password=secret_key.db_password,
-                              host=secret_key.db_host, database=secret_key.db_database)
-cursor = cnx.cursor()
-query = ("SELECT id, store_name, parcel_address FROM store ORDER BY id")
-cursor.execute(query)
+with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
+    with open('reviews.csv', 'w', newline='', encoding='utf-8') as reviews_csv_file:
 
-crawling_success_count = 0
-crawling_error_count = 0
+        # Connect to the database
+        cnx = mysql.connector.connect(user=secret_key.db_user, password=secret_key.db_password,
+                                      host=secret_key.db_host, database=secret_key.db_database)
+        cursor = cnx.cursor()
+        query = ("SELECT id, store_name, parcel_address FROM store ORDER BY id")
+        cursor.execute(query)
 
-for (id, store_name, parcel_address) in cursor:
-    # print(id, store_name, parcel_address)
+        crawling_success_count = 0
+        crawling_error_count = 0
 
-    if parcel_address is None or parcel_address == "None" or store_name is None:
-        continue
+        for (id, store_name, parcel_address) in cursor:
+            # print(id, store_name, parcel_address)
 
-    dong_match = re.search(r"^(서울 [^\s]+구 [^\s]+동)", parcel_address)
+            if parcel_address is None or parcel_address == "None" or store_name is None:
+                continue
 
-    if dong_match is None:
-        crawling_error_count += 1
-        continue
+            dong_match = re.search(r"^(서울 [^\s]+구 [^\s]+동)", parcel_address)
 
-    dong_address = dong_match.group(1)
+            if dong_match is None:
+                crawling_error_count += 1
+                continue
 
-    search_keywords = [f"{dong_address} {remove_parentheses(store_name)}",
-                       f"{remove_parentheses(store_name)} {dong_address}"]
+            dong_address = dong_match.group(1)
 
-    is_crawling_success = False
+            search_keywords = [f"{dong_address} {remove_parentheses(store_name)}",
+                               f"{remove_parentheses(store_name)} {dong_address}"]
 
-    for search_keyword in search_keywords:
+            is_crawling_success = False
 
-        print("search_keyword:", search_keyword)
+            for search_keyword in search_keywords:
 
-        place_search_data = get_search_list(search_keyword)
-        time.sleep(SLEEP_TIME)
-        place_id = get_first_place_id(place_search_data)
-        print("place_id:", place_id)
+                print("search_keyword:", search_keyword)
 
-        if place_id is None:
-            print("네이버 지도에서 장소를 찾지 못해 다른 키워드로 재검색합니다.")
-            print()
-            continue
+                place_search_data = get_search_list(search_keyword)
+                time.sleep(SLEEP_TIME)
+                place_id = get_first_place_id(place_search_data)
+                print("place_id:", place_id)
 
-        else:
-            place_info = get_store_info(place_id)
-            time.sleep(SLEEP_TIME)
-            # print("place_info:", place_info)
+                if place_id is None:
+                    print("네이버 지도에서 장소를 찾지 못해 다른 키워드로 재검색합니다.")
+                    print()
+                    continue
 
-            parsing_place = parsing_store_info(place_info)
-            time.sleep(SLEEP_TIME)
-            print("parsing_place:", parsing_place)
+                else:
+                    place_info = get_store_info(place_id)
+                    time.sleep(SLEEP_TIME)
+                    # print("place_info:", place_info)
 
-            review_data = get_review(place_id)
-            time.sleep(SLEEP_TIME)
-            print("review_data:", review_data)
+                    parsing_place = parsing_store_info(place_info)
+                    time.sleep(SLEEP_TIME)
+                    print("parsing_place:", parsing_place)
 
-            review_stats, parsing_reviews = parsing_review(review_data)
-            time.sleep(SLEEP_TIME)
-            print("review_stats:", review_stats)
-            print("parsing_reviews:", parsing_reviews)
+                    review_data = get_review(place_id)
+                    time.sleep(SLEEP_TIME)
+                    print("review_data:", review_data)
 
+                    review_stats, parsing_reviews = parsing_review(review_data)
+                    time.sleep(SLEEP_TIME)
+                    print("review_stats:", review_stats)
+                    print("parsing_reviews:", parsing_reviews)
+                    print("\n")
 
-            print("\n")
-            is_crawling_success = True
-            crawling_success_count += 1
-            break
+                    # Make stores.csv (start)
+                    parsing_place.update(review_stats)
+                    stores_writer = csv.DictWriter(stores_csv_file, fieldnames=parsing_place.keys())
+                    if reviews_csv_file.tell() == 0:
+                        stores_writer.writeheader()
+                    stores_writer.writerow(parsing_place)
+                    # Make stores.csv (end)
 
-    if not is_crawling_success:
-        crawling_error_count += 1
+                    # Make reviews.csv (start)
+                    for review in parsing_reviews:
+                        reviews_writer = csv.DictWriter(reviews_csv_file, fieldnames=review.keys())
+                        if reviews_csv_file.tell() == 0:
+                            reviews_writer.writeheader()
+                        reviews_writer.writerow(review)
+                    # Make reviews.csv (end)
+
+                    is_crawling_success = True
+                    crawling_success_count += 1
+                    break
+
+            if not is_crawling_success:
+                crawling_error_count += 1
 
 crawling_number = crawling_success_count + crawling_error_count
 print(
