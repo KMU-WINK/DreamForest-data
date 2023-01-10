@@ -22,8 +22,8 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
         cnx = mysql.connector.connect(user=secret_key.db_user, password=secret_key.db_password,
                                       host=secret_key.db_host, database=secret_key.db_database)
         cursor = cnx.cursor()
-        query = ("SELECT id, store_name, parcel_address FROM store ORDER BY id")
-        cursor.execute(query)
+        store_select_query = ("SELECT id, store_name, parcel_address FROM store ORDER BY id")
+        cursor.execute(store_select_query)
 
         crawling_success_count = 0
         crawling_error_count = 0
@@ -78,10 +78,9 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     time.sleep(SLEEP_TIME)
                     print("review_stats:", review_stats)
                     print("parsing_reviews:", parsing_reviews)
-                    print("\n")
 
                     # Make stores.csv (start)
-                    stores_dict = {"id": id, "naver_store_id": place_id}
+                    stores_dict = {"id": id, "naver_place_id": place_id}
                     stores_dict.update(parsing_place)
                     stores_dict.update(review_stats)
                     stores_writer = csv.DictWriter(stores_csv_file, fieldnames=stores_dict.keys())
@@ -90,8 +89,38 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     stores_writer.writerow(stores_dict)
                     # Make stores.csv (end)
 
+                    # Update store table (start)
+                    update_cnx = mysql.connector.connect(user=secret_key.db_user, password=secret_key.db_password,
+                                                         host=secret_key.db_host, database=secret_key.db_database)
+
+                    update_cursor = update_cnx.cursor()
+
+                    stores_update_dic = {"naver_place_id": place_id}
+                    stores_update_dic.update(parsing_place)
+                    stores_update_dic.update(review_stats)
+
+                    # change key naver_blog_review_count to naver_review_count
+
+                    # TODO: change spring ORM attribute name: naver_review_count to naver_blog_review_count
+                    stores_update_dic["naver_review_count"] = stores_update_dic["naver_blog_review_count"]
+                    del stores_update_dic["naver_blog_review_count"]
+                    # spring 변경 후 삭제
+
+                    stores_update_query = "UPDATE store SET {} WHERE id = {}".format(
+                        ", ".join("{}=%s".format(k) for k in stores_update_dic), id)
+                    print("sql:", stores_update_query)
+
+                    value_list = [v for v in stores_update_dic.values()]
+
+                    print(value_list)
+                    update_cursor.execute(stores_update_query, value_list)
+
+                    update_cnx.commit()
+                    print(update_cursor.rowcount, "record(s) affected")
+                    # Update store table (end)
+
                     # Make reviews.csv (start)
-                    reviews_dict = {"stores_id": id, "naver_store_id": place_id}
+                    reviews_dict = {"stores_id": id, "naver_place_id": place_id}
                     for review in parsing_reviews:
                         reviews_dict.update(review)
                         reviews_writer = csv.DictWriter(reviews_csv_file, fieldnames=reviews_dict.keys())
@@ -100,6 +129,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                         reviews_writer.writerow(reviews_dict)
                     # Make reviews.csv (end)
 
+                    print("\n")
                     is_crawling_success = True
                     crawling_success_count += 1
                     break
