@@ -1,8 +1,10 @@
 import csv
+import time
+from datetime import datetime
+import re
 
 import mysql.connector
-import re
-import time
+import pytz
 
 from naver_map_place import get_search_list, get_first_place_id, get_store_info, parsing_store_info, get_review, \
     parsing_review
@@ -22,7 +24,8 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
         cnx = mysql.connector.connect(user=secret_key.db_user, password=secret_key.db_password,
                                       host=secret_key.db_host, database=secret_key.db_database)
         cursor = cnx.cursor()
-        store_select_query = ("SELECT id, store_name, parcel_address FROM store ORDER BY id")
+        store_select_query = (
+            "SELECT id, store_name, parcel_address FROM store WHERE naver_update_date <= DATE_SUB(NOW(), INTERVAL 7 DAY) OR naver_update_date IS NULL ORDER BY id")
         cursor.execute(store_select_query)
 
         crawling_success_count = 0
@@ -80,7 +83,10 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     print("parsing_reviews:", parsing_reviews)
 
                     # Make stores.csv (start)
-                    stores_dict = {"id": id, "naver_place_id": place_id}
+                    kst = pytz.timezone('Asia/Seoul')  # Create a timezone object for KST
+                    naver_update_time = datetime.now(tz=kst)  # Get the current date and time in KST
+
+                    stores_dict = {"id": id, "naver_place_id": place_id, "naver_updated_at": naver_update_time}
                     stores_dict.update(parsing_place)
                     stores_dict.update(review_stats)
                     stores_writer = csv.DictWriter(stores_csv_file, fieldnames=stores_dict.keys())
@@ -94,17 +100,24 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                                                          host=secret_key.db_host, database=secret_key.db_database)
 
                     update_cursor = update_cnx.cursor()
+                    # korea preset date
 
-                    stores_update_dic = {"naver_place_id": place_id}
+                    stores_update_dic = {"naver_place_id": place_id,
+                                         "naver_updated_at": naver_update_time}
                     stores_update_dic.update(parsing_place)
                     stores_update_dic.update(review_stats)
 
                     # change key naver_blog_review_count to naver_review_count
 
-                    # TODO: change spring ORM attribute name: naver_review_count to naver_blog_review_count
+                    # TODO: change spring ORM attribute name:
+                    #  1. naver_review_count to naver_blog_review_count
+                    #  2. naver_update_date to naver_updated_at (29번 라인 쿼리문도 수정)
                     stores_update_dic["naver_review_count"] = stores_update_dic["naver_blog_review_count"]
                     del stores_update_dic["naver_blog_review_count"]
-                    # spring 변경 후 삭제
+
+                    stores_update_dic["naver_update_date"] = stores_update_dic["naver_updated_at"]
+                    del stores_update_dic["naver_updated_at"]
+                    # spring 변경 후 삭제 (끝)
 
                     stores_update_query = "UPDATE store SET {} WHERE id = {}".format(
                         ", ".join("{}=%s".format(k) for k in stores_update_dic), id)
