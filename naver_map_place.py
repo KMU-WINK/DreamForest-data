@@ -41,33 +41,40 @@ def get_store_info(place_id):
 def parsing_store_info(place_info):
     parsing_place = {}
 
-    get_keys = ["name", "x", "y", "address", "phone", "categories", "bizHour", "menus", "menuImages",
-                "reviewCount"]
-    # reviewCount: 블로그리뷰
+    get_naver_keys = ["name", "x", "y", "address", "phone", "categories", "bizHour", "menus", "menuImages",
+                      "reviewCount"]
+
+    my_column_keys = ["naver_store_name", "naver_x", "naver_y", "naver_parcel_address", "naver_phone",
+                      "naver_categories",
+                      "naver_biz_hour", "naver_menus", "naver_menu_images",
+                      "naver_blog_review_count"]
 
     # Initialize the parsing_place dictionary with the keys
-    for key in get_keys:
-        parsing_place[key] = None
+    for my_key in my_column_keys:
+        parsing_place[my_key] = None
 
-    for key in get_keys:
-        value = place_info[key]
+    for i in range(len(get_naver_keys)):
+        naver_key = get_naver_keys[i]
+        my_key = my_column_keys[i]
+
+        value = place_info[naver_key]
 
         if type(value) == list and len(value) == 0:
             continue
         if value is None or value == '' or value == ' ' or value == 'None' or value == '[]':
             continue
 
-        if key == "menuImages":
+        if naver_key == "menuImages":
             menu_images = []
             for menu_image in value:
                 menu_images.append(menu_image["imageUrl"])
-            parsing_place[key] = json.dumps(menu_images, ensure_ascii=False)
+            parsing_place[my_key] = json.dumps(menu_images, ensure_ascii=False)
             continue
 
         if type(value) == list or type(value) == dict:
             value = json.dumps(value, ensure_ascii=False)
 
-        parsing_place[key] = value
+        parsing_place[my_key] = value
 
     return parsing_place
 
@@ -164,8 +171,8 @@ def parsing_review(json_reviews):
         if "visitorReviewStats" in data_obj:
             if data_obj["visitorReviewStats"] is not None:
                 review_obj = data_obj["visitorReviewStats"]["review"]
-                review_stats["average_rating"] = review_obj["avgRating"]
-                review_stats["visit_review_count"] = review_obj["totalCount"]
+                review_stats["naver_average_rating"] = review_obj["avgRating"]
+                review_stats["naver_visit_review_count"] = review_obj["totalCount"]
 
         if "visitorReviews" not in data_obj.keys():
             continue

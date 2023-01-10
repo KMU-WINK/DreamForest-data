@@ -81,7 +81,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     print("\n")
 
                     # Make stores.csv (start)
-                    stores_dict = {"id": id}
+                    stores_dict = {"id": id, "naver_store_id": place_id}
                     stores_dict.update(parsing_place)
                     stores_dict.update(review_stats)
                     stores_writer = csv.DictWriter(stores_csv_file, fieldnames=stores_dict.keys())
@@ -91,7 +91,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     # Make stores.csv (end)
 
                     # Make reviews.csv (start)
-                    reviews_dict = {"stores_id": id}
+                    reviews_dict = {"stores_id": id, "naver_store_id": place_id}
                     for review in parsing_reviews:
                         reviews_dict.update(review)
                         reviews_writer = csv.DictWriter(reviews_csv_file, fieldnames=reviews_dict.keys())
