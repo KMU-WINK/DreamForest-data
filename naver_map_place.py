@@ -43,6 +43,7 @@ def parsing_store_info(place_info):
 
     get_keys = ["name", "x", "y", "address", "phone", "categories", "bizHour", "menus", "menuImages",
                 "reviewCount"]
+    # reviewCount: 블로그리뷰
 
     # Initialize the parsing_place dictionary with the keys
     for key in get_keys:
@@ -60,8 +61,11 @@ def parsing_store_info(place_info):
             menu_images = []
             for menu_image in value:
                 menu_images.append(menu_image["imageUrl"])
-            parsing_place[key] = menu_images
+            parsing_place[key] = json.dumps(menu_images, ensure_ascii=False)
             continue
+
+        if type(value) == list or type(value) == dict:
+            value = json.dumps(value, ensure_ascii=False)
 
         parsing_place[key] = value
 
@@ -142,7 +146,8 @@ def get_review(place_id, language="ko"):
             "Content-Type": "application/json",
             "referer": f"https://pcmap.place.naver.com/restaurant/{place_id}/home"
         }
-        result = s.post('https://pcmap-api.place.naver.com/graphql', headers=headers, data=json.dumps(data)).text
+        result = s.post('https://pcmap-api.place.naver.com/graphql', headers=headers,
+                        data=json.dumps(data, ensure_ascii=False)).text
         json_result = json.loads(result)
         return json_result
 
@@ -193,7 +198,7 @@ def parsing_review(json_reviews):
             review_image_list = []
             for media_index in range(len(review_image_data)):
                 review_image_list.append(review_image_data[media_index]["thumbnail"])
-                review_data["review_image"] = review_image_list
+                review_data["review_image"] = json.dumps(review_image_list, ensure_ascii=False)
 
             visited_date = item["visited"][0:-2]
 
@@ -216,6 +221,7 @@ def parsing_review(json_reviews):
 
 if __name__ == '__main__':
     search_keyword = '서울 강남구 역삼동 짜짜루'
+    # search_keyword = '서울 강남구 논현동 씨유 논현역드림점'
     place_search_data = get_search_list(search_keyword)
     print("place_search_data:", place_search_data)
 
