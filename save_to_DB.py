@@ -98,16 +98,12 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     # Update store table (start)
                     update_cnx = mysql.connector.connect(user=secret_key.db_user, password=secret_key.db_password,
                                                          host=secret_key.db_host, database=secret_key.db_database)
-
                     update_cursor = update_cnx.cursor()
-                    # korea preset date
 
                     stores_update_dic = {"naver_place_id": place_id,
                                          "naver_updated_at": naver_update_time}
                     stores_update_dic.update(parsing_place)
                     stores_update_dic.update(review_stats)
-
-                    # change key naver_blog_review_count to naver_review_count
 
                     # TODO: change spring ORM attribute name:
                     #  1. naver_review_count to naver_blog_review_count
@@ -129,7 +125,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     update_cursor.execute(stores_update_query, value_list)
 
                     update_cnx.commit()
-                    print(update_cursor.rowcount, "record(s) affected")
+                    print(update_cursor.rowcount, "record(s) affected in store table")
                     # Update store table (end)
 
                     # Make reviews.csv (start)
@@ -140,7 +136,23 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                         if reviews_csv_file.tell() == 0:
                             reviews_writer.writeheader()
                         reviews_writer.writerow(reviews_dict)
-                    # Make reviews.csv (end)
+                        # Make reviews.csv (end)
+
+                    # TODO: 리뷰 DB에 추가하기 (먼저 백에서 stores_id 추가해줘야함)
+                    # Delete naver_reviews table (start)
+                    review_delete_cnx = mysql.connector.connect(user=secret_key.db_user,
+                                                                password=secret_key.db_password,
+                                                                host=secret_key.db_host,
+                                                                database=secret_key.db_database)
+                    review_delete_cursor = review_delete_cnx.cursor()
+
+                    review_delete_query = f"DELETE FROM naver_reviews WHERE stores_id = {id}"
+                    print("review_delete_query:", review_delete_query)
+                    review_delete_cursor.execute(review_delete_query)
+                    review_delete_cnx.commit()
+                    # Delete naver_reviews  table (end)
+
+                    # TODO: naver_review 테이블에 리뷰 데이터 추가하기
 
                     print("\n")
                     is_crawling_success = True
