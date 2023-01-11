@@ -62,6 +62,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                 if place_id is None:
                     print("네이버 지도에서 장소를 찾지 못해 다른 키워드로 재검색합니다.")
                     print()
+                    # TODO: DB에서 naver_updated_at(구: naver_update_date) Update 하기
                     continue
 
                 else:
@@ -138,7 +139,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                         reviews_writer.writerow(reviews_dict)
                         # Make reviews.csv (end)
 
-                    # TODO: 리뷰 DB에 추가하기 (먼저 백에서 stores_id 추가해줘야함)
+                    # TODO: cnx 와 cursor 중복 연결 제거, close() 추가
                     # Delete naver_reviews table (start)
                     review_delete_cnx = mysql.connector.connect(user=secret_key.db_user,
                                                                 password=secret_key.db_password,
@@ -152,7 +153,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     review_delete_cnx.commit()
                     # Delete naver_reviews  table (end)
 
-                    # Insert naver_reviews table (start)
+                    # Insert naver_reviews table (start) # TODO: Make reviews.csv와 한번에 처리하기. (performance)
                     review_insert_cnx = mysql.connector.connect(user=secret_key.db_user,
                                                                 password=secret_key.db_password,
                                                                 host=secret_key.db_host,
@@ -162,7 +163,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     for review in parsing_reviews:
                         review_insert_dic = {"stores_id": id, "naver_place_id": place_id}
                         review_insert_dic.update(review)
-                        print("reviews_dict:", reviews_dict)
+                        # print("reviews_dict:", reviews_dict)
 
                         review_insert_query = "INSERT INTO naver_reviews ({}) VALUES ({})".format(
                             ", ".join(review_insert_dic.keys()), ", ".join("%s" for _ in review_insert_dic))
