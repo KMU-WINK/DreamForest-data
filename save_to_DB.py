@@ -152,7 +152,24 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     review_delete_cnx.commit()
                     # Delete naver_reviews  table (end)
 
-                    # TODO: naver_review 테이블에 리뷰 데이터 추가하기
+                    # Insert naver_reviews table (start)
+                    review_insert_cnx = mysql.connector.connect(user=secret_key.db_user,
+                                                                password=secret_key.db_password,
+                                                                host=secret_key.db_host,
+                                                                database=secret_key.db_database)
+                    review_insert_cursor = review_insert_cnx.cursor()
+
+                    for review in parsing_reviews:
+                        review_insert_dic = {"stores_id": id, "naver_place_id": place_id}
+                        review_insert_dic.update(review)
+                        print("reviews_dict:", reviews_dict)
+
+                        review_insert_query = "INSERT INTO naver_reviews ({}) VALUES ({})".format(
+                            ", ".join(review_insert_dic.keys()), ", ".join("%s" for _ in review_insert_dic))
+                        print("review_insert_query:", review_insert_query)
+                        review_insert_cursor.execute(review_insert_query, list(review_insert_dic.values()))
+                        review_insert_cnx.commit()
+                    # Insert naver_reviews table (end)
 
                     print("\n")
                     is_crawling_success = True
