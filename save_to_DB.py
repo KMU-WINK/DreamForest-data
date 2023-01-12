@@ -25,7 +25,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                                       host=secret_key.db_host, database=secret_key.db_database)
         cursor = cnx.cursor()
         store_select_query = (
-            "SELECT id, store_name, parcel_address FROM store WHERE naver_update_at  <= DATE_SUB(NOW(), INTERVAL 7 DAY) OR naver_update_at IS NULL ORDER BY id")
+            "SELECT id, store_name, parcel_address FROM store WHERE naver_updated_at  <= DATE_SUB(NOW(), INTERVAL 7 DAY) OR naver_updated_at IS NULL ORDER BY id")
         cursor.execute(store_select_query)
 
         crawling_success_count = 0
@@ -62,7 +62,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                 if place_id is None:
                     print("네이버 지도에서 장소를 찾지 못해 다른 키워드로 재검색합니다.")
                     print()
-                    # Update naver_update_at in store table (start)
+                    # Update naver_updated_at in store table (start)
                     update_cnx_1 = mysql.connector.connect(user=secret_key.db_user, password=secret_key.db_password,
                                                            host=secret_key.db_host, database=secret_key.db_database)
                     update_cursor_1 = update_cnx_1.cursor()
@@ -70,7 +70,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     kst = pytz.timezone('Asia/Seoul')  # Create a timezone object for KST
                     naver_update_time = datetime.now(tz=kst)  # Get the current date and time in KST
 
-                    stores_update_dic_1 = {"naver_update_at": naver_update_time}
+                    stores_update_dic_1 = {"naver_updated_at": naver_update_time}
 
                     stores_update_query_1 = "UPDATE store SET {} WHERE id = {}".format(
                         ", ".join("{}=%s".format(k) for k in stores_update_dic_1), id)
@@ -84,7 +84,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
 
                     update_cursor_1.close()  # Close the cursor
                     update_cnx_1.close()  # Close the connection
-                    # Update naver_update_at in store table (end)
+                    # Update naver_updated_at in store table (end)
 
                     continue
 
@@ -110,7 +110,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     kst = pytz.timezone('Asia/Seoul')  # Create a timezone object for KST
                     naver_update_time = datetime.now(tz=kst)  # Get the current date and time in KST
 
-                    stores_dict = {"id": id, "naver_place_id": place_id, "naver_update_at": naver_update_time}
+                    stores_dict = {"id": id, "naver_place_id": place_id, "naver_updated_at": naver_update_time}
                     stores_dict.update(parsing_place)
                     stores_dict.update(review_stats)
                     stores_writer = csv.DictWriter(stores_csv_file, fieldnames=stores_dict.keys())
@@ -125,7 +125,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     update_cursor = update_cnx.cursor()
 
                     stores_update_dic = {"naver_place_id": place_id,
-                                         "naver_update_at": naver_update_time}
+                                         "naver_updated_at": naver_update_time}
                     stores_update_dic.update(parsing_place)
                     stores_update_dic.update(review_stats)
 
@@ -144,7 +144,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     # Update store table (end)
 
                     # Make reviews.csv (start)
-                    reviews_dict = {"stores_id": id, "naver_place_id": place_id}
+                    reviews_dict = {"store_id": id, "naver_place_id": place_id}
                     for review in parsing_reviews:
                         reviews_dict.update(review)
                         reviews_writer = csv.DictWriter(reviews_csv_file, fieldnames=reviews_dict.keys())
@@ -161,7 +161,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                                                                 database=secret_key.db_database)
                     review_delete_cursor = review_delete_cnx.cursor()
 
-                    review_delete_query = f"DELETE FROM naver_reviews WHERE stores_id = {id}"
+                    review_delete_query = f"DELETE FROM naver_reviews WHERE store_id = {id}"
                     print("review_delete_query:", review_delete_query)
                     review_delete_cursor.execute(review_delete_query)
                     review_delete_cnx.commit()
@@ -179,7 +179,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     review_insert_cursor = review_insert_cnx.cursor()
 
                     for review in parsing_reviews:
-                        review_insert_dic = {"stores_id": id, "naver_place_id": place_id}
+                        review_insert_dic = {"store_id": id, "naver_place_id": place_id}
                         review_insert_dic.update(review)
                         # print("reviews_dict:", reviews_dict)
 
