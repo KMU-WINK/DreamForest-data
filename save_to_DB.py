@@ -62,7 +62,30 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                 if place_id is None:
                     print("네이버 지도에서 장소를 찾지 못해 다른 키워드로 재검색합니다.")
                     print()
-                    # TODO: DB에서 naver_update_at Update 하기
+                    # Update naver_update_at in store table (start)
+                    update_cnx_1 = mysql.connector.connect(user=secret_key.db_user, password=secret_key.db_password,
+                                                           host=secret_key.db_host, database=secret_key.db_database)
+                    update_cursor_1 = update_cnx_1.cursor()
+
+                    kst = pytz.timezone('Asia/Seoul')  # Create a timezone object for KST
+                    naver_update_time = datetime.now(tz=kst)  # Get the current date and time in KST
+
+                    stores_update_dic_1 = {"naver_update_at": naver_update_time}
+
+                    stores_update_query_1 = "UPDATE store SET {} WHERE id = {}".format(
+                        ", ".join("{}=%s".format(k) for k in stores_update_dic_1), id)
+                    print("sql:", stores_update_query_1)
+
+                    value_list_1 = [v for v in stores_update_dic_1.values()]
+                    update_cursor_1.execute(stores_update_query_1, value_list_1)
+
+                    update_cnx_1.commit()
+                    print(update_cursor_1.rowcount, "record(s) affected in store table")
+
+                    update_cursor_1.close()  # Close the cursor
+                    update_cnx_1.close()  # Close the connection
+                    # Update naver_update_at in store table (end)
+
                     continue
 
                 else:
@@ -111,12 +134,13 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     print("sql:", stores_update_query)
 
                     value_list = [v for v in stores_update_dic.values()]
-
-                    print(value_list)
                     update_cursor.execute(stores_update_query, value_list)
 
                     update_cnx.commit()
                     print(update_cursor.rowcount, "record(s) affected in store table")
+
+                    update_cursor.close()  # Close the cursor
+                    update_cnx.close()  # Close the connection
                     # Update store table (end)
 
                     # Make reviews.csv (start)
@@ -129,7 +153,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                         reviews_writer.writerow(reviews_dict)
                         # Make reviews.csv (end)
 
-                    # TODO: cnx 와 cursor 중복 연결 제거, close() 추가
+                    # TODO: cnx 와 cursor 중복 연결 제거
                     # Delete naver_reviews table (start)
                     review_delete_cnx = mysql.connector.connect(user=secret_key.db_user,
                                                                 password=secret_key.db_password,
@@ -141,6 +165,10 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     print("review_delete_query:", review_delete_query)
                     review_delete_cursor.execute(review_delete_query)
                     review_delete_cnx.commit()
+
+                    review_delete_cursor.close()  # Close the cursor
+                    review_delete_cnx.close()  # Close the connection
+
                     # Delete naver_reviews  table (end)
 
                     # Insert naver_reviews table (start) # TODO: Make reviews.csv와 한번에 처리하기. (performance)
@@ -160,6 +188,9 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                         print("review_insert_query:", review_insert_query)
                         review_insert_cursor.execute(review_insert_query, list(review_insert_dic.values()))
                         review_insert_cnx.commit()
+
+                    review_insert_cursor.close()  # Close the cursor
+                    review_insert_cnx.close()  # Close the connection
                     # Insert naver_reviews table (end)
 
                     print("\n")
