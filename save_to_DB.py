@@ -15,7 +15,8 @@ def remove_parentheses(string):
     return re.sub(r"\([^)]*\)", "", string)
 
 
-SLEEP_TIME = 5
+SLEEP_TIME = 1
+CRAWLING_NUM = 20
 
 with open('crawling_data/store.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
     with open('crawling_data/reviews.csv', 'w', newline='', encoding='utf-8') as reviews_csv_file:
@@ -24,8 +25,16 @@ with open('crawling_data/store.csv', 'w', newline='', encoding='utf-8') as store
         cnx = mysql.connector.connect(user=secret_key.db_user, password=secret_key.db_password,
                                       host=secret_key.db_host, database=secret_key.db_database)
         cursor = cnx.cursor()
-        store_select_query = (
-            "SELECT id, store_name, parcel_address FROM store WHERE naver_updated_at  <= DATE_SUB(NOW(), INTERVAL 7 DAY) OR naver_updated_at IS NULL ORDER BY id")
+
+        store_query_string = "SELECT id, store_name, parcel_address"
+        store_query_string += " FROM store"
+        store_query_string += " WHERE store_name IS NOT NULL"
+        store_query_string += " AND parcel_address IS NOT NULL"
+        store_query_string += " AND (naver_updated_at <= DATE_SUB(NOW(), INTERVAL 7 DAY) OR naver_updated_at IS NULL)"
+        store_query_string += " ORDER BY id"
+        store_query_string += f" LIMIT {CRAWLING_NUM}"
+
+        store_select_query = (store_query_string)
         cursor.execute(store_select_query)
 
         crawling_success_count = 0
@@ -203,7 +212,7 @@ with open('crawling_data/store.csv', 'w', newline='', encoding='utf-8') as store
 
 crawling_number = crawling_success_count + crawling_error_count
 print(
-    f"crawling success rate: {round(crawling_success_count / crawling_number)}% ({crawling_success_count}/{crawling_number})")
+    f"crawling success rate: {round(crawling_success_count / crawling_number * 100)}% ({crawling_success_count}/{crawling_number})")
 
 cursor.close()  # Close the cursor
 cnx.close()  # Close the connection
