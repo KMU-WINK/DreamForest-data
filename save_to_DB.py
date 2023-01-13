@@ -17,8 +17,8 @@ def remove_parentheses(string):
 
 SLEEP_TIME = 1
 
-with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
-    with open('reviews.csv', 'w', newline='', encoding='utf-8') as reviews_csv_file:
+with open('crawling_data/store.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
+    with open('crawling_data/reviews.csv', 'w', newline='', encoding='utf-8') as reviews_csv_file:
 
         # Connect to the database
         cnx = mysql.connector.connect(user=secret_key.db_user, password=secret_key.db_password,
@@ -106,7 +106,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     print("review_stats:", review_stats)
                     print("parsing_reviews:", parsing_reviews)
 
-                    # Make stores.csv (start)
+                    # Make crawling_data/store.csv (start)
                     kst = pytz.timezone('Asia/Seoul')  # Create a timezone object for KST
                     naver_update_time = datetime.now(tz=kst)  # Get the current date and time in KST
 
@@ -117,7 +117,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     if reviews_csv_file.tell() == 0:
                         stores_writer.writeheader()
                     stores_writer.writerow(stores_dict)
-                    # Make stores.csv (end)
+                    # Make crawling_data/store.csv (end)
 
                     # Update store table (start)
                     update_cnx = mysql.connector.connect(user=secret_key.db_user, password=secret_key.db_password,
@@ -143,7 +143,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                     update_cnx.close()  # Close the connection
                     # Update store table (end)
 
-                    # Make reviews.csv (start)
+                    # Make crawling_data/reviews.csv (start)
                     reviews_dict = {"store_id": id, "naver_place_id": place_id}
                     for review in parsing_reviews:
                         reviews_dict.update(review)
@@ -151,7 +151,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
                         if reviews_csv_file.tell() == 0:
                             reviews_writer.writeheader()
                         reviews_writer.writerow(reviews_dict)
-                        # Make reviews.csv (end)
+                        # Make crawling_data/reviews.csv (end)
 
                     # TODO: cnx 와 cursor 중복 연결 제거
                     # Delete naver_reviews table (start)
@@ -171,7 +171,7 @@ with open('stores.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
 
                     # Delete naver_reviews  table (end)
 
-                    # Insert naver_reviews table (start) # TODO: Make reviews.csv와 한번에 처리하기. (performance)
+                    # Insert naver_reviews table (start) # TODO: Make crawling_data/reviews.csv와 한번에 처리하기. (performance)
                     review_insert_cnx = mysql.connector.connect(user=secret_key.db_user,
                                                                 password=secret_key.db_password,
                                                                 host=secret_key.db_host,
