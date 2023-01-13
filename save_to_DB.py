@@ -15,7 +15,7 @@ def remove_parentheses(string):
     return re.sub(r"\([^)]*\)", "", string)
 
 
-SLEEP_TIME = 1
+SLEEP_TIME = 5
 
 with open('crawling_data/store.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
     with open('crawling_data/reviews.csv', 'w', newline='', encoding='utf-8') as reviews_csv_file:
