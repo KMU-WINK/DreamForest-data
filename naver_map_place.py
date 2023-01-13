@@ -16,7 +16,7 @@ def get_search_list(search_keyword, language="ko"):
         }
 
         url = f"https://map.naver.com/v5/api/search?caller=pcweb&query={search_keyword}"
-        print("url:", url)
+        # print("url:", url)
 
         result = s.get(url, headers=headers)
         if result.status_code == 200:
