@@ -16,8 +16,8 @@ def remove_parentheses(string):
     return re.sub(r"\([^)]*\)", "", string)
 
 
-with open('crawling_data/store.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
-    with open('crawling_data/reviews.csv', 'w', newline='', encoding='utf-8') as reviews_csv_file:
+with open(config.store_csv_path, 'w', newline='', encoding='utf-8') as stores_csv_file:
+    with open(config.review_csv_path, 'w', newline='', encoding='utf-8') as reviews_csv_file:
 
         # Connect to the database
         cnx = mysql.connector.connect(user=secret_key.db_user, password=secret_key.db_password,
