@@ -170,6 +170,7 @@ def get_review(place_id, language="ko"):
         }
         result = s.post('https://pcmap-api.place.naver.com/graphql', headers=headers,
                         data=json.dumps(data, ensure_ascii=False)).text
+        print("review result: ", result)
         json_result = json.loads(result)
         return json_result
 
