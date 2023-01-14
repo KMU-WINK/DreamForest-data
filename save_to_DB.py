@@ -9,17 +9,15 @@ import pytz
 from naver_map_place import get_search_list, get_first_place_id, get_store_info, parsing_store_info, get_review, \
     parsing_review
 import secret_key
+import config
 
 
 def remove_parentheses(string):
     return re.sub(r"\([^)]*\)", "", string)
 
 
-SLEEP_TIME = 1
-CRAWLING_NUM = 20
-
-with open('crawling_data/store.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
-    with open('crawling_data/reviews.csv', 'w', newline='', encoding='utf-8') as reviews_csv_file:
+with open(config.store_csv_path, 'w', newline='', encoding='utf-8') as stores_csv_file:
+    with open(config.review_csv_path, 'w', newline='', encoding='utf-8') as reviews_csv_file:
 
         # Connect to the database
         cnx = mysql.connector.connect(user=secret_key.db_user, password=secret_key.db_password,
@@ -31,8 +29,9 @@ with open('crawling_data/store.csv', 'w', newline='', encoding='utf-8') as store
         store_query_string += " WHERE store_name IS NOT NULL"
         store_query_string += " AND parcel_address IS NOT NULL"
         store_query_string += " AND (naver_updated_at <= DATE_SUB(NOW(), INTERVAL 7 DAY) OR naver_updated_at IS NULL)"
+        store_query_string += f" AND id >= {config.start_id} "
         store_query_string += " ORDER BY id"
-        store_query_string += f" LIMIT {CRAWLING_NUM}"
+        store_query_string += f" LIMIT {config.crawling_num}"
 
         store_select_query = (store_query_string)
         cursor.execute(store_select_query)
@@ -64,7 +63,7 @@ with open('crawling_data/store.csv', 'w', newline='', encoding='utf-8') as store
                 print("search_keyword:", search_keyword)
 
                 place_search_data = get_search_list(search_keyword)
-                time.sleep(SLEEP_TIME)
+                time.sleep(config.sleep_time)
                 place_id = get_first_place_id(place_search_data)
                 print("place_id:", place_id)
 
@@ -99,19 +98,19 @@ with open('crawling_data/store.csv', 'w', newline='', encoding='utf-8') as store
 
                 else:
                     place_info = get_store_info(place_id)
-                    time.sleep(SLEEP_TIME)
+                    time.sleep(config.sleep_time)
                     # print("place_info:", place_info)
 
                     parsing_place = parsing_store_info(place_info)
-                    time.sleep(SLEEP_TIME)
+                    time.sleep(config.sleep_time)
                     print("parsing_place:", parsing_place)
 
                     review_data = get_review(place_id)
-                    time.sleep(SLEEP_TIME)
+                    time.sleep(config.sleep_time)
                     print("review_data:", review_data)
 
                     review_stats, parsing_reviews = parsing_review(review_data)
-                    time.sleep(SLEEP_TIME)
+                    time.sleep(config.sleep_time)
                     print("review_stats:", review_stats)
                     print("parsing_reviews:", parsing_reviews)
 
