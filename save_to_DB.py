@@ -17,6 +17,7 @@ def remove_parentheses(string):
 
 SLEEP_TIME = 1
 CRAWLING_NUM = 20
+START_ID = 27780
 
 with open('crawling_data/store.csv', 'w', newline='', encoding='utf-8') as stores_csv_file:
     with open('crawling_data/reviews.csv', 'w', newline='', encoding='utf-8') as reviews_csv_file:
@@ -31,6 +32,7 @@ with open('crawling_data/store.csv', 'w', newline='', encoding='utf-8') as store
         store_query_string += " WHERE store_name IS NOT NULL"
         store_query_string += " AND parcel_address IS NOT NULL"
         store_query_string += " AND (naver_updated_at <= DATE_SUB(NOW(), INTERVAL 7 DAY) OR naver_updated_at IS NULL)"
+        store_query_string += f" AND id >= {START_ID} "
         store_query_string += " ORDER BY id"
         store_query_string += f" LIMIT {CRAWLING_NUM}"
 
