@@ -29,7 +29,10 @@ def get_first_place_id(place_json_data):
     place_result = place_json_data['result']['place']
     if place_result is None:
         return None
-    first_place_id = place_result['list'][0]['id']
+    obj_list = place_result['list']
+    if obj_list is None:
+        return None
+    first_place_id = obj_list[0]['id']
     return first_place_id
 
 
